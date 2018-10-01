@@ -128,32 +128,33 @@ Load< GLuint > bloom_program(LoadTagDefault, [](){
                 "vec4 center = texture(tex, gl_FragCoord.xy/textureSize(tex, 0));\n"
 
                 "vec4 blur = center;\n"
+                "float centerB = dot(blur.rgb, vec3(1.0, 1.0, 1.0));\n"
                 "float brightness;\n"
-                "float threshold = 1.0;\n"
-                "float influence = .5;\n"
+                "float threshold = 2.0;\n"
+                "float influence = .2;\n"
 
                 "vec4 n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.x, ofs.y))\n"
                             "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
-                "if(brightness>threshold)\n"
+                "if(brightness<3.0 && brightness>threshold)\n"
                     "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.y, ofs.x))\n"
                             "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
-                "if(brightness>threshold)\n"
+                "if(brightness<3.0 && brightness>threshold)\n"
                     "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.x, -ofs.y))\n"
                             "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
-                "if(brightness>threshold) \n"
+                "if(brightness<3.0 && brightness>threshold) \n"
                     "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.y, -ofs.x))\n"
                             "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
-                "if(brightness>threshold)\n"
+                "if(brightness<3.0 && brightness>threshold)\n"
                     "blur += influence*n1;\n"
 
                 "	fragColor = vec4(blur.rgb, 1.0);\n"
@@ -191,7 +192,7 @@ GLuint load_texture(std::string const &filename) {
 }
 
 Load< GLuint > wood_tex(LoadTagDefault, [](){
-        return new GLuint(load_texture(data_path("textures/wood.png")));
+        return new GLuint(load_texture(data_path("textures/grid.png")));
         });
 
 Load< GLuint > marble_tex(LoadTagDefault, [](){
@@ -231,8 +232,9 @@ Load< GLuint > bright_tex(LoadTagDefault, [](){
 
 Scene::Transform *camera_parent_transform = nullptr;
 Scene::Camera *camera = nullptr;
+Scene::Object *platform = nullptr;
 Scene::Transform *spot_parent_transform = nullptr;
-Scene::Lamp *spot = nullptr;
+//Scene::Lamp *spot = nullptr;
 
 std::vector <Scene::Object *> cubes;
 
@@ -262,6 +264,7 @@ Load< Scene > scene(LoadTagDefault, [](){
                 obj->programs[Scene::Object::ProgramTypeDefault] = texture_program_info;
                 if (t->name == "Platform") {
                 obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *wood_tex;
+                platform = obj;
                 } else if (t->name == "Pedestal") {
                 obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *marble_tex;
                 } else {
@@ -304,8 +307,7 @@ Load< Scene > scene(LoadTagDefault, [](){
             }
         }
         if (!camera) throw std::runtime_error("No 'Camera' camera in scene.");
-
-        //look up the spotlight:
+     /*   //look up the spotlight:
         for (Scene::Lamp *l = ret->first_lamp; l != nullptr; l = l->alloc_next) {
             if (l->transform->name == "Spot") {
                 if (spot) throw std::runtime_error("Multiple 'Spot' objects in scene.");
@@ -314,7 +316,7 @@ Load< Scene > scene(LoadTagDefault, [](){
             }
         }
         if (!spot) throw std::runtime_error("No 'Spot' spotlight in scene.");
-
+*/
         return ret;
 });
 
@@ -488,6 +490,7 @@ void GameMode::update(float elapsed) {
         //TODO
         level++;
         camera->transform->position -= glm::vec3(0.0f, 4.0f, 0.0f);
+        platform->transform->position -= glm::vec3(0.0f, 4.0f, 0.0f);
         float radius = level*1.0f;
         for(uint32_t i = 0; i<level; ++i){
             float angle_iter = (2.0f*M_PI)/level*i;
@@ -606,7 +609,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     glCullFace(GL_FRONT);
     glEnable(GL_CULL_FACE);
 
-    scene->draw(spot, Scene::Object::ProgramTypeShadow);
+    //scene->draw(spot, Scene::Object::ProgramTypeShadow);
 
     glDisable(GL_CULL_FACE);
 
@@ -635,19 +638,20 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     glUseProgram(texture_program->program);
 
     //don't use distant directional light at all (color == 0):
-    glUniform3fv(texture_program->sun_color_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 0.0f)));
-    glUniform3fv(texture_program->sun_direction_vec3, 1, glm::value_ptr(glm::normalize(glm::vec3(0.0f, 0.0f,-1.0f))));
+    glUniform3fv(texture_program->sun_color_vec3, 1, glm::value_ptr(glm::vec3(0.81f, 0.81f, 0.7f)));
+    glUniform3fv(texture_program->sun_direction_vec3, 1, glm::value_ptr(glm::normalize(glm::vec3(0.2f, -1.0f,-0.2f))));
     //use hemisphere light for subtle ambient light:
     glUniform3fv(texture_program->sky_color_vec3, 1, glm::value_ptr(glm::vec3(0.4f, 0.4f, 0.6f)));
     glUniform3fv(texture_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
 
-    glm::mat4 world_to_spot =
+/*    glm::mat4 world_to_spot =
         //This matrix converts from the spotlight's clip space ([-1,1]^3) into depth map texture coordinates ([0,1]^2) and depth map Z values ([0,1]):
         glm::mat4(
                 0.5f, 0.0f, 0.0f, 0.0f,
                 0.0f, 0.5f, 0.0f, 0.0f,
                 0.0f, 0.0f, 0.5f, 0.0f,
-                0.5f, 0.5f, 0.5f+0.00001f /* <-- bias */, 1.0f
+                0.5f, 0.5f, 0.5f+0.00001f
+    , 1.0f
                 )
         //this is the world-to-clip matrix used when rendering the shadow map:
         * spot->make_projection() * spot->transform->make_world_to_local();
@@ -661,7 +665,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
 
     glm::vec2 spot_outer_inner = glm::vec2(std::cos(0.5f * spot->fov), std::cos(0.85f * 0.5f * spot->fov));
     glUniform2fv(texture_program->spot_outer_inner_vec2, 1, glm::value_ptr(spot_outer_inner));
-
+*/
     //This code binds texture index 1 to the shadow map:
     // (note that this is a bit brittle -- it depends on none of the objects in the scene having a texture of index 1 set in their material data; otherwise scene::draw would unbind this texture):
     glActiveTexture(GL_TEXTURE1);
