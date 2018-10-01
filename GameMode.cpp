@@ -119,14 +119,37 @@ Load< GLuint > bloom_program(LoadTagDefault, [](){
                 "		fract(dot(gl_FragCoord.xy ,vec2(12.9898,78.233))),\n"
                 "		fract(dot(gl_FragCoord.xy ,vec2(96.3869,-27.5796)))\n"
                 "	));\n"
-                //do a four-pixel average to blur:
-                "	vec4 blur =\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.x,ofs.y)) / textureSize(tex, 0))\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.y,ofs.x)) / textureSize(tex, 0))\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.x,-ofs.y)) / textureSize(tex, 0))\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.y,-ofs.x)) / textureSize(tex, 0))\n"
-                "	;\n"
-                "	fragColor = vec4(blur.rgb, 1.0);\n" //blur;\n"
+                //referenced guidance on Piazza:
+                //https://piazza.com/class/jlfaf4xoz4y665?cid=65
+                //I did read this too though:
+                //https://learnopengl.com/Advanced-Lighting/Bloom
+                "vec4 center = texture(tex, gl_FragCoord.xy/textureSize(tex, 0));\n"
+
+                "vec4 blur = center;\n"
+                "float brightness;\n"
+                "float threshold = 0.1;\n"
+                "vec4 n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.x, ofs.y))\n"
+                            "/textureSize(tex,0));\n"
+                "brightness = length(n1.rgb);\n"
+                "if(brightness>threshold) blur += 0.1*n1;\n"
+
+                "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.x, -ofs.y))\n"
+                            "/textureSize(tex,0));\n"
+                "brightness = length(n1.rgb);\n"
+                "if(brightness>threshold) blur += 0.1*n1;\n"
+
+                "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.y, ofs.x))\n"
+                            "/textureSize(tex,0));\n"
+                "brightness = length(n1.rgb);\n"
+                "if(brightness>threshold) blur += 0.1*n1;\n"
+
+                "n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.y, -ofs.x))\n"
+                            "/textureSize(tex,0));\n"
+                "brightness = length(n1.rgb);\n"
+                "if(brightness>threshold) blur += 0.1*n1;\n"
+
+
+                "	fragColor = vec4(blur.rgb, 1.0);\n"
                 "}\n"
                 );
 
@@ -172,7 +195,22 @@ Load< GLuint > white_tex(LoadTagDefault, [](){
         GLuint tex = 0;
         glGenTextures(1, &tex);
         glBindTexture(GL_TEXTURE_2D, tex);
-        glm::u8vec4 white(0xff, 0xff, 0xff, 0xff);
+        glm::u8vec4 white(0xff, 0x88, 0x25, 0xff);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, glm::value_ptr(white));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return new GLuint(tex);
+        });
+
+Load< GLuint > bright_tex(LoadTagDefault, [](){
+        GLuint tex = 0;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glm::u8vec4 white(0xff, 0xe1, 0x7a, 0xff);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, glm::value_ptr(white));
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -274,7 +312,7 @@ Load< Scene > scene(LoadTagDefault, [](){
 });
 
 GameMode::GameMode() {
-    correct.emplace_back('a');
+    correct.emplace_back(0);
     cube_order.emplace_back(cube_order.size());
 }
 
@@ -290,107 +328,107 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
     if (evt.type == SDL_KEYDOWN|| evt.type == SDL_KEYUP) {
         if(canPress){
             if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
-                current.emplace_back('a');
+                current.emplace_back(0);
                 canPress = false;
                 return true;
             } else if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
-                current.emplace_back('b');
+                current.emplace_back(1);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_C) {
-                current.emplace_back('c');
+                current.emplace_back(2);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
-                current.emplace_back('d');
+                current.emplace_back(3);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_E) {
-                current.emplace_back('e');
+                current.emplace_back(4);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_F) {
-                current.emplace_back('f');
+                current.emplace_back(5);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
-                current.emplace_back('g');
+                current.emplace_back(6);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_H) {
-                current.emplace_back('h');
+                current.emplace_back(7);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_I) {
-                current.emplace_back('i');
+                current.emplace_back(8);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_J) {
-                current.emplace_back('j');
+                current.emplace_back(9);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_K) {
-                current.emplace_back('k');
+                current.emplace_back(10);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_L) {
-                current.emplace_back('l');
+                current.emplace_back(11);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_M) {
-                current.emplace_back('m');
+                current.emplace_back(12);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_N) {
-                current.emplace_back('n');
+                current.emplace_back(13);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_O) {
-                current.emplace_back('o');
+                current.emplace_back(14);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_P) {
-                current.emplace_back('p');
+                current.emplace_back(15);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_Q) {
-                current.emplace_back('q');
+                current.emplace_back(16);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
-                current.emplace_back('r');
+                current.emplace_back(17);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
-                current.emplace_back('s');
+                current.emplace_back(18);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_T) {
-                current.emplace_back('t');
+                current.emplace_back(19);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_U) {
-                current.emplace_back('u');
+                current.emplace_back(20);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_V) {
-                current.emplace_back('v');
+                current.emplace_back(21);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
-                current.emplace_back('w');
+                current.emplace_back(22);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_X) {
-                current.emplace_back('x');
+                current.emplace_back(23);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
-                current.emplace_back('y');
+                current.emplace_back(24);
                 canPress = false;
                 return true;
             }else if (evt.key.keysym.scancode == SDL_SCANCODE_Z) {
-                current.emplace_back('z');
+                current.emplace_back(25);
                 canPress = false;
                 return true;
             }
@@ -410,6 +448,18 @@ void GameMode::update(float elapsed) {
     camera_parent_transform->rotation = glm::angleAxis(camera_spin, glm::vec3(0.0f, 0.0f, 1.0f));
     spot_parent_transform->rotation = glm::angleAxis(spot_spin, glm::vec3(0.0f, 0.0f, 1.0f));
 
+    for(uint32_t i = 0; i<cubes.size(); ++i){
+        Scene::Object *obj = cubes[i];
+        obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
+            *white_tex;
+    }
+    for(uint32_t i = 0; i<current.size(); ++i){
+        std::cout<<current[i]<<std::endl;
+        Scene::Object *obj = cubes[current[i]];
+        obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
+            *bright_tex;
+    }
+
     total_time += elapsed;
     if(total_time>0.5f){
         total_time = 0.0f;
@@ -418,7 +468,7 @@ void GameMode::update(float elapsed) {
 
     if(win){
         //generate a new pattern
-        correct.emplace_back(letters[correct.size()]);
+        correct.emplace_back(correct.size());
         cube_order.emplace_back(cube_order.size());
         std::random_shuffle(correct.begin(), correct.end());
         //std::random_shuffle(cube_order.begin(), cube_order.end());
@@ -442,10 +492,10 @@ void GameMode::update(float elapsed) {
     //check player order
     std::cout<<"Correct string"<<std::endl;
     for(auto i = correct.begin(); i!=correct.end(); ++i)
-        std::cout<<*i<<std::endl;
+        std::cout<<letters[*i]<<std::endl;
     std::cout<<"Current string"<<std::endl;
     for(auto i = current.begin(); i!=current.end(); ++i)
-        std::cout<<*i<<std::endl;
+        std::cout<<letters[*i]<<std::endl;
 
     if(0<current.size() && current[0] != correct[0]){
         current.erase(current.begin());

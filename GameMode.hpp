@@ -32,8 +32,8 @@ struct GameMode : public Mode {
     std::vector<char> letters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
                             't', 'u', 'v', 'w', 'x', 'y', 'z'};
-    std::vector<char> correct;
-    std::vector<char> current;
+    std::vector<uint32_t> correct;
+    std::vector<uint32_t> current;
     std::vector<uint32_t> cube_order;
     bool win = false;
     uint32_t level = 1;
