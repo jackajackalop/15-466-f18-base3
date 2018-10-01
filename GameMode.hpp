@@ -28,6 +28,14 @@ struct GameMode : public Mode {
 	//draw is called after update:
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+    //for managing game state
+    std::vector<char> letters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                            'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+                            't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    std::vector<char> correct;
+    std::vector<char> current;
+    bool win = true;
+
 	float camera_spin = 0.0f;
 	float spot_spin = 0.0f;
 };

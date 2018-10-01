@@ -21,10 +21,11 @@
 #include <map>
 #include <cstddef>
 #include <random>
+#include <algorithm>
 
 
 Load< MeshBuffer > meshes(LoadTagDefault, [](){
-	return new MeshBuffer(data_path("vignette.pnct"));
+    return new MeshBuffer(data_path("cube.pnct"));
 });
 
 Load< GLuint > meshes_for_texture_program(LoadTagDefault, [](){
@@ -140,6 +141,7 @@ Scene::Transform *camera_parent_transform = nullptr;
 Scene::Camera *camera = nullptr;
 Scene::Transform *spot_parent_transform = nullptr;
 Scene::Lamp *spot = nullptr;
+std::vector <Scene::Object *> cubes;
 
 Load< Scene > scene(LoadTagDefault, [](){
 	Scene *ret = new Scene;
@@ -159,7 +161,7 @@ Load< Scene > scene(LoadTagDefault, [](){
 
 
 	//load transform hierarchy:
-	ret->load(data_path("vignette.scene"), [&](Scene &s, Scene::Transform *t, std::string const &m){
+	ret->load(data_path("cube.scene"), [&](Scene &s, Scene::Transform *t, std::string const &m){
 		Scene::Object *obj = s.new_object(t);
 
 		obj->programs[Scene::Object::ProgramTypeDefault] = texture_program_info;
@@ -170,6 +172,9 @@ Load< Scene > scene(LoadTagDefault, [](){
 		} else {
 			obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *white_tex;
 		}
+        if(t->name == "Cube"){
+            cubes.emplace_back(obj);
+        }
 
 		obj->programs[Scene::Object::ProgramTypeShadow] = depth_program_info;
 
@@ -230,17 +235,89 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		return false;
 	}
 
-	if (evt.type == SDL_MOUSEMOTION) {
-		if (evt.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-			camera_spin += 5.0f * evt.motion.xrel / float(window_size.x);
+    if (evt.type == SDL_KEYDOWN|| evt.type == SDL_KEYUP) {
+		if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
+            current.emplace_back('a');
 			return true;
-		}
-		if (evt.motion.state & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
-			spot_spin += 5.0f * evt.motion.xrel / float(window_size.x);
+		} else if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
+			current.emplace_back('b');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_C) {
+			current.emplace_back('c');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
+			current.emplace_back('d');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_E) {
+			current.emplace_back('e');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_F) {
+			current.emplace_back('f');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
+			current.emplace_back('g');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_H) {
+			current.emplace_back('h');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_I) {
+			current.emplace_back('i');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_J) {
+			current.emplace_back('j');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_K) {
+			current.emplace_back('k');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_L) {
+			current.emplace_back('l');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_M) {
+			current.emplace_back('m');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_N) {
+			current.emplace_back('n');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_O) {
+			current.emplace_back('o');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_P) {
+			current.emplace_back('p');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_Q) {
+			current.emplace_back('q');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
+			current.emplace_back('r');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
+			current.emplace_back('s');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_T) {
+			current.emplace_back('t');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_U) {
+			current.emplace_back('u');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_V) {
+			current.emplace_back('v');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
+			current.emplace_back('w');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_X) {
+			current.emplace_back('x');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
+			current.emplace_back('y');
+			return true;
+		}else if (evt.key.keysym.scancode == SDL_SCANCODE_Z) {
+			current.emplace_back('z');
 			return true;
 		}
 
-	}
+    }
+
 
 	return false;
 }
@@ -248,6 +325,25 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void GameMode::update(float elapsed) {
 	camera_parent_transform->rotation = glm::angleAxis(camera_spin, glm::vec3(0.0f, 0.0f, 1.0f));
 	spot_parent_transform->rotation = glm::angleAxis(spot_spin, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    if(win){
+    //generate a new cube, rearrange positions in a circle
+    //assign letters to each cube
+    //TODO
+
+    //generate a new pattern
+        correct.emplace_back(letters[correct.size()]);
+        std::random_shuffle(correct.begin(), correct.end());
+        win = false;
+    }
+
+    //check player order
+    for(uint32_t i = 0; i<correct.size(); ++i){
+        if(i<current.size() && current[i] != correct[i]){
+            current.clear();
+        }
+    }
+    win = (current.size() == correct.size());
 }
 
 //GameMode will render to some offscreen framebuffer(s).
@@ -279,12 +375,12 @@ struct Framebuffers {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glBindTexture(GL_TEXTURE_2D, 0);
-	
+
 			if (depth_rb == 0) glGenRenderbuffers(1, &depth_rb);
 			glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size.x, size.y);
 			glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	
+
 			if (fb == 0) glGenFramebuffers(1, &fb);
 			glBindFramebuffer(GL_FRAMEBUFFER, fb);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
@@ -317,7 +413,7 @@ struct Framebuffers {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glBindTexture(GL_TEXTURE_2D, 0);
-	
+
 			if (shadow_fb == 0) glGenFramebuffers(1, &shadow_fb);
 			glBindFramebuffer(GL_FRAMEBUFFER, shadow_fb);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, shadow_color_tex, 0);
