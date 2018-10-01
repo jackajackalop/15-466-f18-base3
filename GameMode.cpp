@@ -65,7 +65,9 @@ Load< GLuint > blur_program(LoadTagDefault, [](){
                 "void main() {\n"
                 "	vec2 at = (gl_FragCoord.xy - 0.5 * textureSize(tex, 0)) / textureSize(tex, 0).y;\n"
                 //make blur amount more near the edges and less in the middle:
-                "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
+              //  "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
+
+                "float amt = 5;\n"
                 //pick a vector to move in for blur using function inspired by:
                 //https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
                 "	vec2 ofs = amt * normalize(vec2(\n"
@@ -111,11 +113,11 @@ Load< GLuint > bloom_program(LoadTagDefault, [](){
                 "out vec4 fragColor;\n"
                 "void main() {\n"
                 "	vec2 at = (gl_FragCoord.xy - 0.5 * textureSize(tex, 0)) / textureSize(tex, 0).y;\n"
-                //make blur amount more near the edges and less in the middle:
-                "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
+
                 //pick a vector to move in for blur using function inspired by:
                 //https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
-                "	vec2 ofs = amt * normalize(vec2(\n"
+                "float distance = 8.0f;\n"
+                "	vec2 ofs = distance * normalize(vec2(\n"
                 "		fract(dot(gl_FragCoord.xy ,vec2(12.9898,78.233))),\n"
                 "		fract(dot(gl_FragCoord.xy ,vec2(96.3869,-27.5796)))\n"
                 "	));\n"
@@ -127,27 +129,32 @@ Load< GLuint > bloom_program(LoadTagDefault, [](){
 
                 "vec4 blur = center;\n"
                 "float brightness;\n"
-                "float threshold = 0.1;\n"
+                "float threshold = 1.0;\n"
+                "float influence = .5;\n"
+
                 "vec4 n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.x, ofs.y))\n"
                             "/textureSize(tex,0));\n"
-                "brightness = length(n1.rgb);\n"
-                "if(brightness>threshold) blur += 0.1*n1;\n"
-
-                "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.x, -ofs.y))\n"
-                            "/textureSize(tex,0));\n"
-                "brightness = length(n1.rgb);\n"
-                "if(brightness>threshold) blur += 0.1*n1;\n"
+                "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
+                "if(brightness>threshold)\n"
+                    "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.y, ofs.x))\n"
                             "/textureSize(tex,0));\n"
-                "brightness = length(n1.rgb);\n"
-                "if(brightness>threshold) blur += 0.1*n1;\n"
+                "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
+                "if(brightness>threshold)\n"
+                    "blur += influence*n1;\n"
+
+                "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.x, -ofs.y))\n"
+                            "/textureSize(tex,0));\n"
+                "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
+                "if(brightness>threshold) \n"
+                    "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.y, -ofs.x))\n"
                             "/textureSize(tex,0));\n"
-                "brightness = length(n1.rgb);\n"
-                "if(brightness>threshold) blur += 0.1*n1;\n"
-
+                "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
+                "if(brightness>threshold)\n"
+                    "blur += influence*n1;\n"
 
                 "	fragColor = vec4(blur.rgb, 1.0);\n"
                 "}\n"
@@ -434,6 +441,11 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
             }
         }
         if(evt.key.keysym.scancode==SDL_SCANCODE_SPACE){
+            std::cout<<"Correct string"<<std::endl;
+            for(auto i = correct.begin(); i!=correct.end(); ++i)
+                std::cout<<letters[*i]<<std::endl;
+
+
             //for testing
             //std::cout<<canPress<<std::endl;
         }
@@ -454,7 +466,6 @@ void GameMode::update(float elapsed) {
             *white_tex;
     }
     for(uint32_t i = 0; i<current.size(); ++i){
-        std::cout<<current[i]<<std::endl;
         Scene::Object *obj = cubes[current[i]];
         obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
             *bright_tex;
@@ -490,13 +501,6 @@ void GameMode::update(float elapsed) {
     }
 
     //check player order
-    std::cout<<"Correct string"<<std::endl;
-    for(auto i = correct.begin(); i!=correct.end(); ++i)
-        std::cout<<letters[*i]<<std::endl;
-    std::cout<<"Current string"<<std::endl;
-    for(auto i = current.begin(); i!=current.end(); ++i)
-        std::cout<<letters[*i]<<std::endl;
-
     if(current.size() == correct.size()){
         for(uint32_t i = 0; i<current.size(); ++i){
             if(current[i]!=correct[i])
@@ -634,7 +638,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     glUniform3fv(texture_program->sun_color_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 0.0f)));
     glUniform3fv(texture_program->sun_direction_vec3, 1, glm::value_ptr(glm::normalize(glm::vec3(0.0f, 0.0f,-1.0f))));
     //use hemisphere light for subtle ambient light:
-    glUniform3fv(texture_program->sky_color_vec3, 1, glm::value_ptr(glm::vec3(0.2f, 0.2f, 0.3f)));
+    glUniform3fv(texture_program->sky_color_vec3, 1, glm::value_ptr(glm::vec3(0.4f, 0.4f, 0.6f)));
     glUniform3fv(texture_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
 
     glm::mat4 world_to_spot =
@@ -704,6 +708,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbs.color_tex);
     glUseProgram(*bloom_program);
+   // glUseProgram(*blur_program);
     glBindVertexArray(*empty_vao);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
