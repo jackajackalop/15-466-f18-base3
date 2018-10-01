@@ -141,6 +141,7 @@ Scene::Transform *camera_parent_transform = nullptr;
 Scene::Camera *camera = nullptr;
 Scene::Transform *spot_parent_transform = nullptr;
 Scene::Lamp *spot = nullptr;
+
 std::vector <Scene::Object *> cubes;
 
 Load< Scene > scene(LoadTagDefault, [](){
@@ -171,9 +172,9 @@ Load< Scene > scene(LoadTagDefault, [](){
 			obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *marble_tex;
 		} else {
 			obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *white_tex;
-		}
-        if(t->name == "Cube"){
-            cubes.emplace_back(obj);
+            cubes.push_back(obj);
+            if(cubes.size()>1)
+                obj->transform->position += glm::vec3(100.0,0.0,0.0);
         }
 
 		obj->programs[Scene::Object::ProgramTypeShadow] = depth_program_info;
@@ -224,6 +225,7 @@ Load< Scene > scene(LoadTagDefault, [](){
 });
 
 GameMode::GameMode() {
+    correct.emplace_back('a');
 }
 
 GameMode::~GameMode() {
@@ -316,6 +318,16 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}
 
+        if(evt.key.keysym.scancode == SDL_SCANCODE_SPACE){
+            std::cout<<"Correct string"<<std::endl;
+            for(auto i = correct.begin(); i!=correct.end(); ++i)
+                std::cout<<*i<<std::endl;
+            std::cout<<"Current string"<<std::endl;
+            for(auto i = current.begin(); i!=current.end(); ++i)
+                std::cout<<*i<<std::endl;
+
+        }
+
     }
 
 
@@ -330,9 +342,19 @@ void GameMode::update(float elapsed) {
     //generate a new cube, rearrange positions in a circle
     //assign letters to each cube
     //TODO
-
+        level++;
+        camera->transform->position -= glm::vec3(0.0f, 2.0f, 0.0f);
+        float radius = level*1.0f;
+        for(uint32_t i = 0; i<level; ++i){
+            float angle_iter = (2.0f*M_PI)/level*i;
+            float newX = radius*cosf(angle_iter);
+            float newZ = radius*sinf(angle_iter);
+            Scene::Object * cCube = cubes[i];
+            cCube->transform->position = glm::vec3(newX, 0.0f, newZ);
+        }
     //generate a new pattern
         correct.emplace_back(letters[correct.size()]);
+        current.clear();
         std::random_shuffle(correct.begin(), correct.end());
         win = false;
     }
@@ -340,7 +362,7 @@ void GameMode::update(float elapsed) {
     //check player order
     for(uint32_t i = 0; i<correct.size(); ++i){
         if(i<current.size() && current[i] != correct[i]){
-            current.clear();
+            current.erase(current.begin()+i);
         }
     }
     win = (current.size() == correct.size());

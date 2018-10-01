@@ -34,7 +34,8 @@ struct GameMode : public Mode {
                             't', 'u', 'v', 'w', 'x', 'y', 'z'};
     std::vector<char> correct;
     std::vector<char> current;
-    bool win = true;
+    bool win = false;
+    uint32_t level = 1;
 
 	float camera_spin = 0.0f;
 	float spot_spin = 0.0f;
