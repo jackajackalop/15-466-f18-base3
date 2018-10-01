@@ -497,17 +497,13 @@ void GameMode::update(float elapsed) {
     for(auto i = current.begin(); i!=current.end(); ++i)
         std::cout<<letters[*i]<<std::endl;
 
-    if(0<current.size() && current[0] != correct[0]){
-        current.erase(current.begin());
-    }
-    //else{
-        for(uint32_t i = 1; i<current.size(); ++i){
-            if(current[i] != correct[i]){
+    if(current.size() == correct.size()){
+        for(uint32_t i = 0; i<current.size(); ++i){
+            if(current[i]!=correct[i])
                 current.clear();
-            }
         }
-    //}
-    win = (current.size() == correct.size());
+        win = (current.size() == correct.size());
+    }
 }
 
 //GameMode will render to some offscreen framebuffer(s).
