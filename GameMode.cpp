@@ -92,6 +92,53 @@ Load< GLuint > blur_program(LoadTagDefault, [](){
         return new GLuint(program);
 });
 
+Load< GLuint > bloom_program(LoadTagDefault, [](){
+        GLuint program = compile_program(
+                //this draws a triangle that covers the entire screen:
+                "#version 330\n"
+                "void main() {\n"
+                "	gl_Position = vec4(4 * (gl_VertexID & 1) - 1,  2 * (gl_VertexID & 2) - 1, 0.0, 1.0);\n"
+                "}\n"
+                ,
+                //NOTE on reading screen texture:
+                //texelFetch() gives direct pixel access with integer coordinates, but accessing out-of-bounds pixel is undefined:
+                //	vec4 color = texelFetch(tex, ivec2(gl_FragCoord.xy), 0);
+                //texture() requires using [0,1] coordinates, but handles out-of-bounds more gracefully (using wrap settings of underlying texture):
+                //	vec4 color = texture(tex, gl_FragCoord.xy / textureSize(tex,0));
+
+                "#version 330\n"
+                "uniform sampler2D tex;\n"
+                "out vec4 fragColor;\n"
+                "void main() {\n"
+                "	vec2 at = (gl_FragCoord.xy - 0.5 * textureSize(tex, 0)) / textureSize(tex, 0).y;\n"
+                //make blur amount more near the edges and less in the middle:
+                "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
+                //pick a vector to move in for blur using function inspired by:
+                //https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
+                "	vec2 ofs = amt * normalize(vec2(\n"
+                "		fract(dot(gl_FragCoord.xy ,vec2(12.9898,78.233))),\n"
+                "		fract(dot(gl_FragCoord.xy ,vec2(96.3869,-27.5796)))\n"
+                "	));\n"
+                //do a four-pixel average to blur:
+                "	vec4 blur =\n"
+                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.x,ofs.y)) / textureSize(tex, 0))\n"
+                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.y,ofs.x)) / textureSize(tex, 0))\n"
+                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.x,-ofs.y)) / textureSize(tex, 0))\n"
+                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.y,-ofs.x)) / textureSize(tex, 0))\n"
+                "	;\n"
+                "	fragColor = vec4(blur.rgb, 1.0);\n" //blur;\n"
+                "}\n"
+                );
+
+        glUseProgram(program);
+
+        glUniform1i(glGetUniformLocation(program, "tex"), 0);
+
+        glUseProgram(0);
+
+        return new GLuint(program);
+});
+
 
 GLuint load_texture(std::string const &filename) {
     glm::uvec2 size;
@@ -610,7 +657,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     //Copy scene from color buffer to screen, performing post-processing effects:
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbs.color_tex);
-    glUseProgram(*blur_program);
+    glUseProgram(*bloom_program);
     glBindVertexArray(*empty_vao);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
