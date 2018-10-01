@@ -34,8 +34,10 @@ struct GameMode : public Mode {
                             't', 'u', 'v', 'w', 'x', 'y', 'z'};
     std::vector<char> correct;
     std::vector<char> current;
+    std::vector<uint32_t> cube_order;
     bool win = false;
     uint32_t level = 1;
+    float total_time = 0.0f;
 
 	float camera_spin = 0.0f;
 	float spot_spin = 0.0f;
