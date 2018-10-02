@@ -26,6 +26,7 @@
 
 Load< MeshBuffer > meshes(LoadTagDefault, [](){
         return new MeshBuffer(data_path("cube.pnct"));
+        //return new MeshBuffer(data_path("sun.pnct"));
         });
 
 Load< GLuint > meshes_for_texture_program(LoadTagDefault, [](){
@@ -44,55 +45,6 @@ Load< GLuint > empty_vao(LoadTagDefault, [](){
         glBindVertexArray(0);
         return new GLuint(vao);
         });
-
-Load< GLuint > blur_program(LoadTagDefault, [](){
-        GLuint program = compile_program(
-                //this draws a triangle that covers the entire screen:
-                "#version 330\n"
-                "void main() {\n"
-                "	gl_Position = vec4(4 * (gl_VertexID & 1) - 1,  2 * (gl_VertexID & 2) - 1, 0.0, 1.0);\n"
-                "}\n"
-                ,
-                //NOTE on reading screen texture:
-                //texelFetch() gives direct pixel access with integer coordinates, but accessing out-of-bounds pixel is undefined:
-                //	vec4 color = texelFetch(tex, ivec2(gl_FragCoord.xy), 0);
-                //texture() requires using [0,1] coordinates, but handles out-of-bounds more gracefully (using wrap settings of underlying texture):
-                //	vec4 color = texture(tex, gl_FragCoord.xy / textureSize(tex,0));
-
-                "#version 330\n"
-                "uniform sampler2D tex;\n"
-                "out vec4 fragColor;\n"
-                "void main() {\n"
-                "	vec2 at = (gl_FragCoord.xy - 0.5 * textureSize(tex, 0)) / textureSize(tex, 0).y;\n"
-                //make blur amount more near the edges and less in the middle:
-                //  "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
-
-                "float amt = 5;\n"
-                //pick a vector to move in for blur using function inspired by:
-                //https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
-                "	vec2 ofs = amt * normalize(vec2(\n"
-                "		fract(dot(gl_FragCoord.xy ,vec2(12.9898,78.233))),\n"
-                "		fract(dot(gl_FragCoord.xy ,vec2(96.3869,-27.5796)))\n"
-                "	));\n"
-                //do a four-pixel average to blur:
-                "	vec4 blur =\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.x,ofs.y)) / textureSize(tex, 0))\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.y,ofs.x)) / textureSize(tex, 0))\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.x,-ofs.y)) / textureSize(tex, 0))\n"
-                "		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.y,-ofs.x)) / textureSize(tex, 0))\n"
-                "	;\n"
-                "	fragColor = vec4(blur.rgb, 1.0);\n" //blur;\n"
-                "}\n"
-                );
-
-        glUseProgram(program);
-
-        glUniform1i(glGetUniformLocation(program, "tex"), 0);
-
-        glUseProgram(0);
-
-        return new GLuint(program);
-});
 
 Load< GLuint > bloom_program(LoadTagDefault, [](){
         GLuint program = compile_program(
@@ -334,87 +286,87 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
     }
 
     if(canPress){
-    if (evt.type == SDL_KEYDOWN|| evt.type == SDL_KEYUP) {
-        if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
-            select(0);
-            return true;
-        } else if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
-            select(1);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_C) {
-            select(2);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
-            select(3);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_E) {
-            select(4);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_F) {
-            select(5);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
-            select(6);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_H) {
-            select(7);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_I) {
-            select(8);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_J) {
-            select(9);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_K) {
-            select(10);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_L) {
-            select(11);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_M) {
-            select(12);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_N) {
-            select(13);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_O) {
-            select(14);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_P) {
-            select(15);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_Q) {
-            select(16);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
-            select(17);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
-            select(18);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_T) {
-            select(19);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_U) {
-            select(20);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_V) {
-            select(21);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
-            select(22);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_X) {
-            select(23);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
-            select(24);
-            return true;
-        }else if (evt.key.keysym.scancode == SDL_SCANCODE_Z) {
-            select(25);
-            return true;
+        if (evt.type == SDL_KEYDOWN|| evt.type == SDL_KEYUP) {
+            if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
+                select(0);
+                return true;
+            } else if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
+                select(1);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_C) {
+                select(2);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
+                select(3);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_E) {
+                select(4);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_F) {
+                select(5);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
+                select(6);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_H) {
+                select(7);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_I) {
+                select(8);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_J) {
+                select(9);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_K) {
+                select(10);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_L) {
+                select(11);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_M) {
+                select(12);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_N) {
+                select(13);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_O) {
+                select(14);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_P) {
+                select(15);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_Q) {
+                select(16);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
+                select(17);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
+                select(18);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_T) {
+                select(19);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_U) {
+                select(20);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_V) {
+                select(21);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
+                select(22);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_X) {
+                select(23);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
+                select(24);
+                return true;
+            }else if (evt.key.keysym.scancode == SDL_SCANCODE_Z) {
+                select(25);
+                return true;
+            }
         }
-    }
     }
 
     return false;
@@ -645,7 +597,6 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
         glDisable(GL_DEPTH_TEST);
         std::string message = "ESCAPE TO PAUSE";
         float height = 0.06f;
-        //float width = text_width(message, height);
 
         height = 0.1f;
         for(uint32_t i = 0; i<cube_order.size(); ++i){
@@ -659,6 +610,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
                     glm::vec2(newX, newY), height,
                     glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
         }
+
 
         glUseProgram(0);
     }
@@ -677,7 +629,6 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbs.color_tex);
     glUseProgram(*bloom_program);
-    // glUseProgram(*blur_program);
     glBindVertexArray(*empty_vao);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);

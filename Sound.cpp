@@ -118,7 +118,7 @@ void mix_audio(void *, Uint8 *stream, int len) {
 		buffer[s].l = 0.0f;
 		buffer[s].r = 0.0f;
 	}
-	
+
 	//Figure out global info (listener position, volume) at start and end of mix period:
 	glm::vec3 start_position = listener.position.value;
 	glm::vec3 start_right = listener.right.value;

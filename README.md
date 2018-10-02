@@ -1,11 +1,10 @@
 # Game Information
-(Note: fill in this portion with information about your game.)
 
-Title: (TODO: your game's title)
+Title: Musical Bloom
 
-Author: (TODO: your name)
+Author: Yixin He
 
-Design Document: [TODO: name of design document](TODO: link to design document)
+Design Document: [Musical Bloom Design Documents](http://graphics.cs.cmu.edu/courses/15-466-f18/game3-designs/ishmaelj/)
 
 Screen Shot:
 
@@ -13,83 +12,19 @@ Screen Shot:
 
 How To Play:
 
-TODO: describe the controls and (if needed) goals/strategy.
+Press the key corresponding to each box in the order that you are shown.
 
 Changes From The Design Document:
-
-TODO: what did you need to add/remove/modify from the original design? Why?
+The original design didn't specify how keys would be mapped, so that's my interpretations.  Visuals were changed.
 
 Good / Bad / Ugly Code:
 
-TODO: provide examples of code you wrote from this project that you think is good (elegant, simple, useful), bad (hack-y, brittle, unreadable), and ugly (particularly inelegant). Provide a sentence or two of justification for the examples.
+Good: I had some issues with making sure each key press only got added once to the vector holding the current sequence the player pressed. The code resolving this, the use of the vector "selection" is not a particularly "elegant" solution, but I'm pleased that this method managaed to resolve the issue and improve gameplay.
 
-# Changes In This Base Code
+Bad: Wasn't too sure how to make the bloom on bloom selected things, so the way I did it feels mildly hacky. My code repeatedly changes the texture color assigned to items.
 
-I've changed the main executable name back to 'main' and disabled building the server. However, ```Connection.*pp``` is still around if you decide to do some networking.
+Ugly: The placement of the letters is kind of ugly. I wasn't sure how draw text's positioning worked. The clamp works I guess, but I wish it were more consistent with either the letter being inside the item it represents or always to the side of the item.
 
-I've added a new shader (which you are likely to be modifying) in ```texture_program.*pp```; it supports a shadow-map-based spotlight as well as the existing point and hemisphere lights, and gets its surface color from a texture modulated by a vertex color. This means you can use it with textured objects (with all-white vertex color) and vertex colored objects (with all-white texture).
-Scene objects support multiple shader program slots now. This means they can have different uniforms, programs (even geometry) in different rendering passes. The code uses this when rendering the shadow map.
-
-This shader, along with the code in GameMode::draw() which sets it up, is going to be very useful to dig into. Particular shadow map things that were a bit tricky:
-
- - I'm rendering only the back-facing polygons into the shadow framebuffer; this means there is less Z-fighting on the front faces but can causes a light leak at the back of the pillar which is why there is still a little bit of bias added in the projection matrix.
- - Clip space coordinates are in [-1,1]^3 while depth textures are indexed by values in [0,1]^2 and contain depths in [0,1]. So when transforming the vertex position into shadow map space.
- - The texture_shader does the depth comparison in its shadow lookup by declaring spot_depth_tex as a sampler2DShadow and by setting the TEXTURE_COMPARE_MODE and TEXTURE_COMPARE_FUNC parameters on the texture in GameMode::draw . It also sets filtering mode LINEAR on the texture so that the result in a blend of the four closest depth comparisons.
- - When used on a sampler2DShadow, the textureProj(tex, coord) returns projection and comparison on the supplied texture coordinate -- i.e., (coord.z / coord.w < tex[coord.xy / coord.w] ? 1.0 : 0.0) -- which is very convenient for writing shadow map lookups.
-
-I also added a blur shader that renders the scene to an offscreen framebuffer and then samples and averages it to come up with a sort of lens blur effect. (See the third part of GameMode::draw .)
-
-# Using This Base Code
-
-Before you dive into the code, it helps to understand the overall structure of this repository.
-- Files you should read and/or edit:
-    - ```main.cpp``` creates the game window and contains the main loop. You should read through this file to understand what it's doing, but you shouldn't need to change things (other than window title, size, and maybe the initial Mode).
-    - ```server.cpp``` creates a basic server.
-    - ```GameMode.*pp``` declaration+definition for the GameMode, a basic scene-based game mode.
-    - ```meshes/export-meshes.py``` exports meshes from a .blend file into a format usable by our game runtime.
-    - ```meshes/export-walkmeshes.py``` exports meshes from a given layer of a .blend file into a format usable by the WalkMeshes loading code.
-    - ```meshes/export-scene.py``` exports the transform hierarchy of a blender scene to a file.
-	- ```Connection.*pp``` networking code.
-    - ```Jamfile``` responsible for telling FTJam how to build the project. If you add any additional .cpp files or want to change the name of your runtime executable you will need to modify this.
-    - ```.gitignore``` ignores the ```objs/``` directory and the generated executable file. You will need to change it if your executable name changes. (If you find yourself changing it to ignore, e.g., your editor's swap files you should probably, instead be investigating making this change in the global git configuration.)
-- Files you should read the header for (and use):
-	- ```Sound.*pp``` spatial sound code.
-    - ```WalkMesh.*pp``` code to load and walk on walkmeshes.
-    - ```MenuMode.hpp``` presents a menu with configurable choices. Can optionally display another mode in the background.
-    - ```Scene.hpp``` scene graph implementation, including loading code.
-    - ```Mode.hpp``` base class for modes (things that recieve events and draw).
-    - ```Load.hpp``` asset loading system. Very useful for OpenGL assets.
-    - ```MeshBuffer.hpp``` code to load mesh data in a variety of formats (and create vertex array objects to bind it to program attributes).
-    - ```data_path.hpp``` contains a helper function that allows you to specify paths relative to the executable (instead of the current working directory). Very useful when loading assets.
-    - ```draw_text.hpp``` draws text (limited to capital letters + *) to the screen.
-    - ```compile_program.hpp``` compiles OpenGL shader programs.
-    - ```load_save_png.hpp``` load and save PNG images.
-- Files you probably don't need to read or edit:
-    - ```GL.hpp``` includes OpenGL prototypes without the namespace pollution of (e.g.) SDL's OpenGL header. It makes use of ```glcorearb.h``` and ```gl_shims.*pp``` to make this happen.
-    - ```make-gl-shims.py``` does what it says on the tin. Included in case you are curious. You won't need to run it.
-    - ```read_chunk.hpp``` contains a function that reads a vector of structures prefixed by a magic number. It's surprising how many simple file formats you can create that only require such a function to access.
-
-## Asset Build Instructions
-
-The ```meshes/export-meshes.py``` script can write mesh data including a variety of attributes (e.g., *p*ositions, *n*ormals, *c*olors, *t*excoords) from a selected layer of a blend file:
-
-```
-blender --background --python meshes/export-meshes.py -- meshes/crates.blend:1 dist/crates.pnc
-```
-
-The ```meshes/export-scene.py``` script can write the transformation hierarchy of the scene from a selected layer of a blend file, and includes references to meshes (by name):
-
-```
-blender --background --python meshes/export-scene.py -- meshes/crates.blend:1 dist/crates.scene
-```
-
-The ```meshes/export-walkmeshes.py``` script can writes vertices, normals, and triangle indicies of all meshes on a selected layer of a .blend file:
-
-```
-blender --background --python meshes/export-walkmeshes.py -- meshes/crates.blend:3 dist/crates.walkmesh
-```
-
-There is a Makefile in the ```meshes``` directory with some example commands of this sort in it as well.
 
 ## Runtime Build Instructions
 
