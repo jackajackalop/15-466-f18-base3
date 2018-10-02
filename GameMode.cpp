@@ -65,7 +65,7 @@ Load< GLuint > blur_program(LoadTagDefault, [](){
                 "void main() {\n"
                 "	vec2 at = (gl_FragCoord.xy - 0.5 * textureSize(tex, 0)) / textureSize(tex, 0).y;\n"
                 //make blur amount more near the edges and less in the middle:
-              //  "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
+                //  "	float amt = (0.01 * textureSize(tex,0).y) * max(0.0,(length(at) - 0.3)/0.2);\n"
 
                 "float amt = 5;\n"
                 //pick a vector to move in for blur using function inspired by:
@@ -134,28 +134,28 @@ Load< GLuint > bloom_program(LoadTagDefault, [](){
                 "float influence = .2;\n"
 
                 "vec4 n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.x, ofs.y))\n"
-                            "/textureSize(tex,0));\n"
+                "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
                 "if(brightness<3.0 && brightness>threshold)\n"
-                    "blur += influence*n1;\n"
+                "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.y, ofs.x))\n"
-                            "/textureSize(tex,0));\n"
+                "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
                 "if(brightness<3.0 && brightness>threshold)\n"
-                    "blur += influence*n1;\n"
+                "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(-ofs.x, -ofs.y))\n"
-                            "/textureSize(tex,0));\n"
+                "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
                 "if(brightness<3.0 && brightness>threshold) \n"
-                    "blur += influence*n1;\n"
+                "blur += influence*n1;\n"
 
                 "n1 = texture(tex, (gl_FragCoord.xy+vec2(ofs.y, -ofs.x))\n"
-                            "/textureSize(tex,0));\n"
+                "/textureSize(tex,0));\n"
                 "brightness = dot(n1.rgb, vec3(1.0, 1.0, 1.0));\n"
                 "if(brightness<3.0 && brightness>threshold)\n"
-                    "blur += influence*n1;\n"
+                "blur += influence*n1;\n"
 
                 "	fragColor = vec4(blur.rgb, 1.0);\n"
                 "}\n"
@@ -307,10 +307,24 @@ Load< Scene > scene(LoadTagDefault, [](){
 
 GameMode::GameMode() {
     correct.emplace_back(0);
+    to_show.emplace_back(0);
     cube_order.emplace_back(cube_order.size());
 }
 
 GameMode::~GameMode() {
+}
+
+void GameMode::select(uint32_t i){
+    if(!selected[i]){
+        current.emplace_back(i);
+        selected[i] = true;
+    }
+}
+
+void GameMode::clear_selection(){
+    for(uint32_t i = 0; i<selected.size(); ++i){
+        selected[i] = false;
+    }
 }
 
 bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
@@ -319,126 +333,89 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
         return false;
     }
 
+    if(canPress){
     if (evt.type == SDL_KEYDOWN|| evt.type == SDL_KEYUP) {
-        if(canPress){
-            if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
-                current.emplace_back(0);
-                canPress = false;
-                return true;
-            } else if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
-                current.emplace_back(1);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_C) {
-                current.emplace_back(2);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
-                current.emplace_back(3);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_E) {
-                current.emplace_back(4);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_F) {
-                current.emplace_back(5);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
-                current.emplace_back(6);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_H) {
-                current.emplace_back(7);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_I) {
-                current.emplace_back(8);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_J) {
-                current.emplace_back(9);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_K) {
-                current.emplace_back(10);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_L) {
-                current.emplace_back(11);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_M) {
-                current.emplace_back(12);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_N) {
-                current.emplace_back(13);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_O) {
-                current.emplace_back(14);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_P) {
-                current.emplace_back(15);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_Q) {
-                current.emplace_back(16);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
-                current.emplace_back(17);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
-                current.emplace_back(18);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_T) {
-                current.emplace_back(19);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_U) {
-                current.emplace_back(20);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_V) {
-                current.emplace_back(21);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
-                current.emplace_back(22);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_X) {
-                current.emplace_back(23);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
-                current.emplace_back(24);
-                canPress = false;
-                return true;
-            }else if (evt.key.keysym.scancode == SDL_SCANCODE_Z) {
-                current.emplace_back(25);
-                canPress = false;
-                return true;
-            }
+        if (evt.key.keysym.scancode == SDL_SCANCODE_A) {
+            select(0);
+            return true;
+        } else if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
+            select(1);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_C) {
+            select(2);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_D) {
+            select(3);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_E) {
+            select(4);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_F) {
+            select(5);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
+            select(6);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_H) {
+            select(7);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_I) {
+            select(8);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_J) {
+            select(9);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_K) {
+            select(10);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_L) {
+            select(11);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_M) {
+            select(12);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_N) {
+            select(13);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_O) {
+            select(14);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_P) {
+            select(15);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_Q) {
+            select(16);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
+            select(17);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
+            select(18);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_T) {
+            select(19);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_U) {
+            select(20);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_V) {
+            select(21);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_W) {
+            select(22);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_X) {
+            select(23);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
+            select(24);
+            return true;
+        }else if (evt.key.keysym.scancode == SDL_SCANCODE_Z) {
+            select(25);
+            return true;
         }
-        if(evt.key.keysym.scancode==SDL_SCANCODE_SPACE){
-            std::cout<<"Correct string"<<std::endl;
-            for(auto i = correct.begin(); i!=correct.end(); ++i)
-                std::cout<<letters[*i]<<std::endl;
-
-
-            //for testing
-            //std::cout<<canPress<<std::endl;
-        }
-
     }
-
+    }
 
     return false;
 }
@@ -446,51 +423,78 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void GameMode::update(float elapsed) {
     camera_parent_transform->rotation = glm::angleAxis(camera_spin, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    for(uint32_t i = 0; i<cubes.size(); ++i){
-        Scene::Object *obj = cubes[i];
-        obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
-            *white_tex;
-    }
-    for(uint32_t i = 0; i<current.size(); ++i){
-        Scene::Object *obj = cubes[current[i]];
+    if(to_show.size()>0){
+        total_time += elapsed;
+        if(total_time>0.5f){
+            total_time = 0.0f;
+            to_show.erase(to_show.begin());
+        }
+
+        for(uint32_t i = 0; i<cubes.size(); ++i){
+            Scene::Object *obj = cubes[i];
+            obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
+                *white_tex;
+        }
+        Scene::Object *obj = cubes[to_show[0]];
         obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
             *bright_tex;
-    }
 
-    total_time += elapsed;
-    if(total_time>0.5f){
-        total_time = 0.0f;
-        canPress = true;
-    }
-
-    if(win){
-        //generate a new pattern
-        correct.emplace_back(correct.size());
-        cube_order.emplace_back(cube_order.size());
-        std::random_shuffle(correct.begin(), correct.end());
-        //generate a new cube, rearrange positions in a circle
-        level++;
-        camera->transform->position -= glm::vec3(0.0f, 4.0f, 0.0f);
-        platform->transform->position -= glm::vec3(0.0f, 4.0f, 0.0f);
-        float radius = level*1.0f;
-        for(uint32_t i = 0; i<level; ++i){
-            float angle_iter = (2.0f*M_PI)/level*i;
-            float newX = radius*cosf(angle_iter);
-            float newZ = radius*sinf(angle_iter);
-            Scene::Object * cCube = cubes[i];
-            cCube->transform->position = glm::vec3(newX, 0.0f, newZ);
+    }else{
+        for(uint32_t i = 0; i<cubes.size(); ++i){
+            Scene::Object *obj = cubes[i];
+            obj->programs[Scene::Object::ProgramTypeDefault].textures[0] =
+                *white_tex;
         }
-        current.clear();
-        win = false;
-    }
-
-    //check player order
-    if(current.size() == correct.size()){
-        for(uint32_t i = 0; i<current.size(); ++i){
-            if(current[i]!=correct[i])
-                current.clear();
+        for(uint32_t i = 0; i<selected.size(); ++i){
+            if(selected[i]){
+                Scene::Object *obj = cubes[i];
+                obj->programs[Scene::Object::ProgramTypeDefault].textures[0]
+                    =*bright_tex;
+            }
         }
-        win = (current.size() == correct.size());
+
+        if(!canPress){
+            total_time += elapsed;
+            if(total_time>0.5f){
+                total_time = 0.0f;
+                canPress = true;
+            }
+        }
+
+        if(win){
+            canPress = false;
+            //generate a new pattern
+            correct.emplace_back(correct.size());
+            cube_order.emplace_back(cube_order.size());
+            std::random_shuffle(correct.begin(), correct.end());
+            //generate a new cube, rearrange positions in a circle
+            level++;
+            camera->transform->position -= glm::vec3(0.0f, 4.0f, 0.0f);
+            float radius = level*1.0f;
+            for(uint32_t i = 0; i<level; ++i){
+                float angle_iter = (2.0f*M_PI)/level*i;
+                float newX = radius*cosf(angle_iter);
+                float newZ = radius*sinf(angle_iter);
+                Scene::Object * cCube = cubes[i];
+                cCube->transform->position = glm::vec3(newX, 0.0f, newZ);
+            }
+
+            to_show = correct;
+            current.clear();
+            clear_selection();
+            win = false;
+        }else{
+            //check player order
+            if(current.size() == correct.size()){
+                for(uint32_t i = 0; i<current.size(); ++i){
+                    if(current[i]!=correct[i]){
+                        current.clear();
+                        clear_selection();
+                    }
+                }
+                win = (current.size() == correct.size());
+            }
+        }
     }
 }
 
@@ -647,9 +651,12 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
         for(uint32_t i = 0; i<cube_order.size(); ++i){
             uint32_t cubeNum = cube_order[i];
             message = std::toupper(letters[cubeNum]);
+            float newX = cubes[cubeNum]->transform->position.x/5.5f;
+            float newY = cubes[cubeNum]->transform->position.z/5.5f;
+            newX = glm::clamp(newX, -1.0f, 1.0f);
+            newY = glm::clamp(newY, -0.8f, 0.8f);
             draw_text(message,
-                    glm::vec2(cubes[cubeNum]->transform->position.x/5.5f +0.1f,
-                        cubes[cubeNum]->transform->position.z/5.5f), height,
+                    glm::vec2(newX, newY), height,
                     glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
         }
 
@@ -670,7 +677,7 @@ void GameMode::draw(glm::uvec2 const &drawable_size) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbs.color_tex);
     glUseProgram(*bloom_program);
-   // glUseProgram(*blur_program);
+    // glUseProgram(*blur_program);
     glBindVertexArray(*empty_vao);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);

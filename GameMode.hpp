@@ -22,6 +22,8 @@ struct GameMode : public Mode {
 	//The function should return 'true' if it handled the event.
 	virtual bool handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) override;
 
+    virtual void select(uint32_t);
+    virtual void clear_selection();
 	//update is called at the start of a new frame, after events are handled:
 	virtual void update(float elapsed) override;
 
@@ -33,8 +35,14 @@ struct GameMode : public Mode {
                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
                             't', 'u', 'v', 'w', 'x', 'y', 'z'};
     std::vector<uint32_t> correct;
+    std::vector<bool> selected = {false, false, false, false, false, false,
+                            false, false, false, false, false, false, false,
+                            false, false, false, false, false, false, false,
+                            false, false, false, false, false, false};
+
     std::vector<uint32_t> current;
     std::vector<uint32_t> cube_order;
+    std::vector<uint32_t> to_show;
     bool win = false;
     uint32_t level = 1;
     float total_time = 0.0f;
