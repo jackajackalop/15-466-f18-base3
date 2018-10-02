@@ -25,8 +25,8 @@
 
 
 Load< MeshBuffer > meshes(LoadTagDefault, [](){
-        return new MeshBuffer(data_path("cube.pnct"));
-        //return new MeshBuffer(data_path("sun.pnct"));
+        //return new MeshBuffer(data_path("cube.pnct"));
+        return new MeshBuffer(data_path("sun.pnct"));
         });
 
 Load< GLuint > meshes_for_texture_program(LoadTagDefault, [](){
